@@ -1,0 +1,7 @@
+==================================================
+       LAPORAN AKHIR FORENSIK: CYBER TRACE        
+==================================================
+ Total Rekaman Log Masuk : 4 baris
+ Jumlah IP Ter-blacklist : 2 perangkat
+ Daftar Blacklist IP     : ['185.220.101.5', '192.168.1.50']
+ Status Akhir Keamanan   : INVESTIGASI SELESAI & DATABASE TERKUNCI
