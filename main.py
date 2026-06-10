@@ -1,6 +1,6 @@
 import os
 import time
-from src.models import LogEntry
+from src.models import LogEntry, Device, Server
 from src.file_handler import CyberFileHandler
 from src.algorithms import merge_sort_logs, linear_search_logs_by_activity
 
@@ -17,6 +17,7 @@ class CyberTraceApp:
         self.patrol_path = os.path.join("data", "patrol_servers.json")
         self.tree_path = os.path.join("data", "process_tree.json")
         self.report_path = os.path.join("reports", "cyber_report.txt")
+        self.asset_path = os.path.join("data", "network_assets.json")
         
         # State Data di Memori (Python List / Set biasa untuk backup simpan JSON)
         self.raw_logs = []
@@ -24,6 +25,8 @@ class CyberTraceApp:
         self.raw_patrols = []
         self.raw_processes = []
         self.blacklist_ips = set()
+        self.network_inventory = CyberFileHandler.load_network_assets(self.asset_path)
+        
         
         # Inisialisasi Objek Struktur Data Murni Pointer
         self.timeline = ChronologicalTimeline()
@@ -67,7 +70,7 @@ class CyberTraceApp:
         for server in self.raw_patrols:
             self.guard.add_to_patrol(server)
             
-        # 4. Load Process Tree (Membangun objek Tree secara dinamis dari flat JSON)
+        # 4. Load Process Tree (Membangun objek Tree dari JSON)
         self.raw_processes = CyberFileHandler.load_process_tree(self.tree_path)
         if self.raw_processes:
             # Cari root node (yang parent_pid-nya null)
@@ -107,7 +110,7 @@ class CyberTraceApp:
 
             if pilihan == "1":
                 print("\n--- INPUT DATA LOG BARU ---")
-                waktu = input("Timestamp (e.g., 10:00:19): ")
+                waktu = input("Timestamp (e.g., yy-mm-dd 10:00:19): ")
                 src = input("Masukkan Source IP (Penyerang): ")
                 dst = input("Masukkan Destination IP (Korban): ")
                 act = input("Aktivitas (e.g., Ransomware Run): ")
@@ -195,7 +198,6 @@ class CyberTraceApp:
                         c_pid = int(input("Masukkan PID Proses Baru: "))
                         
                         if self.proc_tree.insert_process(p_pid, c_name, c_pid):
-                            # Simpan pembaruan ke backup list dan tulis ke JSON
                             self.raw_processes.append({"pid": c_pid, "name": c_name, "parent_pid": p_pid})
                             CyberFileHandler.save_process_tree(self.tree_path, self.raw_processes)
                             print("[+] Proses baru berhasil diinjeksikan ke Tree dan JSON!")
@@ -236,9 +238,64 @@ class CyberTraceApp:
                     print(f" [{log.severity}] {log.timestamp} - {log.source_ip} -> {log.activity}")
 
             elif pilihan == "8":
-                ip = input("\nMasukkan IP Address sasaran inspeksi: ")
-                print(f"Status di Set Blacklist : {'TERBLOKIR (DANGEROUS)' if ip in self.blacklist_ips else 'CLEAN'}")
-                print(f"Informasi Hash Table    : {self.threat_table.search(ip)}")
+                self.history.push_history("Threat & Asset Inspector")
+                print("\n--- PUSAT INSPEKSI KEAMANAN & MANAJEMEN ASET ---")
+                print(" [1] Inspeksi Keamanan & Deteksi Aset IP")
+                print(" [2] Registrasi Perangkat Baru ke Inventaris")
+                print(" [3] Kembali ke Menu Utama")
+                sub_menu = input("Pilih tindakan (1/2/3): ").strip()
+                if sub_menu == "1":
+                    print("\n--- SUBSISTEM INSPEKSI INTEGRITAS IP ---")
+                    ip = input("Masukkan IP Address sasaran inspeksi: ")
+                    print(f"Status di Set Blacklist : {'TERBLOKIR (DANGEROUS)' if ip in self.blacklist_ips else 'CLEAN'}")
+                    print(f"Informasi Hash Table    : {self.threat_table.search(ip)}")
+
+                    print("-" * 50)
+                    print("HASIL PELACAKAN ASET FISIK PERANGKAT: ")
+                    if ip in self.network_inventory:
+                        asset = self.network_inventory[ip]
+                        # Memanggil fungsi dasar display_info dari Parent Class (Device)
+                        print(f" Informasi Dasar : {asset.display_info()}")
+                        
+                        # Memeriksa secara dinamis apakah objek ini merupakan Child Class (Server)
+                        from src.models import Server
+                        if isinstance(asset, Server):
+                            print(f" [!] Peringatan  : Perangkat ini merupakan INFRASTRUKTUR KRITIS!")
+                            print(f" Tipe Layanan    : {asset.server_type} Server")
+                            print(f" Level Proteksi  : {asset.critical_level}")
+                    else:
+                        print(" [?] Status Aset : Perangkat Luar Jaringan / Tidak Terdaftar di Inventaris.")
+                    print("-" * 50)
+                elif sub_menu == "2":
+                    print("\n--- FORM REGISTRASI PERANGKAT JARINGAN BARU ---")
+                    ip = input("Masukkan IP Address Baru   : ").strip()
+                    mac = input("Masukkan MAC Address Baru  : ").strip()
+                    
+                    print("Koordinat Lokasi Fisik:")
+                    gedung = input("  Nama Gedung/Sektor : ").strip()
+                    lantai = input("  Lantai/Ruang       : ").strip()
+                    rak    = input("  Nomor Rak/Posisi   : ").strip()
+                    loc_tuple = (gedung, lantai, rak) # Membentuk struktur Tuple
+                    
+                    is_server_input = input("Apakah perangkat ini bertindak sebagai Server? (y/n): ").lower()
+                    
+                    if is_server_input == 'y':
+                        server_type = input("Masukkan Jenis Layanan Server (e.g., Web/Database): ").strip()
+                        # Instansiasi objek menggunakan Child Class
+                        self.network_inventory[ip] = Server(ip, mac, loc_tuple, server_type)
+                    elif is_server_input == 'n':
+                        # Instansiasi objek menggunakan Parent Class
+                        self.network_inventory[ip] = Device(ip, mac, loc_tuple)
+                    else:
+                        print("[!] Pilihan tidak valid.")
+
+                    # Sinkronisasikan state memori RAM ke file penyimpanan fisik JSON
+                    CyberFileHandler.save_network_assets(self.asset_path, self.network_inventory)
+                    print(f"\n[+] BERHASIL: Perangkat [{ip}] resmi terdaftar dalam infrastruktur jaringan!")
+
+                elif sub_menu != '3':
+                    print("[!] Pilihan tidak valid.")
+                self.history.pop_history()
 
             elif pilihan == "9":
                 self.history.push_history("Task & Patrol Manager")
@@ -278,7 +335,6 @@ class CyberTraceApp:
                         CyberFileHandler.save_simple_list(self.patrol_path, self.raw_patrols)
                         print("[+] Server baru berhasil dikunci ke rute melingkar dan JSON!")
                     elif sub_p == "2":
-                        # Menggunakan logika melingkar yang kamu koreksi sebelumnya!
                         self.guard.run_patrol_simulation(self.threat_table, self.incident_queue)
                     elif sub_p != "3":
                         print("[!] Pilihan tidak valid.")

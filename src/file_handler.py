@@ -1,6 +1,6 @@
 import json
 import os
-from src.models import LogEntry
+from src.models import LogEntry, Device, Server
 
 class CyberFileHandler:
     @staticmethod
@@ -23,7 +23,6 @@ class CyberFileHandler:
         data = [{"timestamp": l.timestamp, "source_ip": l.source_ip, "destination_ip": l.destination_ip, "activity": l.activity, "severity": l.severity} for l in log_list]
         with open(file_path, 'w') as file: json.dump(data, file, indent=4)
 
-    # --- INPUT/OUTPUT DINAMIS BARU ---
     @staticmethod
     def load_simple_list(file_path):
         """Memuat list biasa dari JSON (Untuk Todo-List dan Patroli)"""
@@ -50,3 +49,51 @@ class CyberFileHandler:
     def save_report(file_path, content):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, 'w') as file: file.write(content)
+
+    @staticmethod
+    def load_network_assets(file_path):
+        """Memuat data JSON dan mengonversinya menjadi objek OOP (Device/Server)"""
+        
+        asset_dict = {}
+        if not os.path.exists(file_path): 
+            return asset_dict
+            
+        try:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                for item in data:
+                    # Konversi list dari JSON menjadi Tuple untuk imutabilitas lokasi
+                    loc_tuple = tuple(item['location'])
+                    
+                    if item['is_server']:
+                        asset_dict[item['ip_address']] = Server(
+                            item['ip_address'], item['mac_address'], 
+                            loc_tuple, item['server_type']
+                        )
+                    else:
+                        asset_dict[item['ip_address']] = Device(
+                            item['ip_address'], item['mac_address'], loc_tuple
+                        )
+        except Exception as e:
+            print(f"[!] Error membaca Aset JSON: {e}")
+        return asset_dict
+
+    @staticmethod
+    def save_network_assets(file_path, asset_dict):
+        """Mengonversi kembali objek OOP menjadi format tekstual JSON"""
+        import json
+        from src.models import Server
+        
+        data = []
+        for ip, asset in asset_dict.items():
+            is_server = isinstance(asset, Server)
+            data.append({
+                "ip_address": asset.ip_address,
+                "mac_address": asset.mac_address,
+                "location": list(asset.location), # Konversi kembali ke list untuk JSON
+                "is_server": is_server,
+                "server_type": asset.server_type if is_server else None
+            })
+            
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
