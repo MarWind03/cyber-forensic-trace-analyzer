@@ -5,18 +5,16 @@ class Node:
 
 class InvestigationStack:
     def __init__(self):
-        self.head = None  # Pointer ke node paling atas stack
+        self.head = Node("Command Center")  # Pointer ke node paling atas stack
+        self.size = 0
 
     def push_history(self, ip_address):
         new_node = Node(ip_address)
 
-        # Node baru menunjuk ke head lama
         new_node.next = self.head
-
-        # Head berpindah ke node baru
         self.head = new_node
-
-        print(f"Membuka investigasi untuk perangkat: {ip_address}")
+        self.size += 1
+        print(f"Membuka : {ip_address}")
 
     def pop_history(self):
         if self.head is None:
@@ -30,14 +28,11 @@ class InvestigationStack:
 
         # Simpan halaman saat ini
         current_page = self.head.ip_address
-
         # Head mundur ke node berikutnya
         self.head = self.head.next
-
         previous_page = self.head.ip_address
-
-        print(f"Kembali dari {current_page} ke perangkat: {previous_page}")
-
+        self.size -= 1
+        print(f"Kembali dari {current_page} ke : {previous_page}")
         return previous_page
 
     def is_empty(self):
@@ -55,13 +50,10 @@ class InvestigationStack:
             print(f"- {current.ip_address}")
             current = current.next
 
-
-
-class Node:
-    def __init__(self, server_ip):
-        self.server_ip = server_ip
-        self.next = None
-
+    def get_current(self):
+        if self.is_empty():
+            return "Main Menu"
+        return self.head.ip_address
 
 class IncidentQueue:
     def __init__(self):
@@ -70,8 +62,8 @@ class IncidentQueue:
         self.size = 0
 
     # Masukkan server ke antrean (enqueue)
-    def enqueue_incident(self, server_ip):
-        new_node = Node(server_ip)
+    def enqueue_incident(self, ip_address):
+        new_node = Node(ip_address)
 
         # Jika antrean kosong
         if self.rear is None:
@@ -83,7 +75,7 @@ class IncidentQueue:
 
         self.size += 1
 
-        print(f"[ALERT] {server_ip} dimasukkan ke antrean penanganan bahaya!")
+        print(f"[ALERT] {ip_address} dimasukkan ke antrean penanganan bahaya!")
 
     # Keluarkan server dari antrean (dequeue)
     def dequeue_incident(self):
@@ -91,7 +83,7 @@ class IncidentQueue:
             print("Aman! Tidak ada antrean insiden siber aktif.")
             return None
 
-        handled_server = self.front.server_ip
+        handled_server = self.front.ip_address
 
         # Geser front ke node berikutnya
         self.front = self.front.next
@@ -118,28 +110,10 @@ class IncidentQueue:
         index = 1
 
         while current:
-            print(f"{index}. Urutan Penanganan -> {current.server_ip}")
+            print(f"{index}. Urutan Penanganan -> {current.ip_address}")
             current = current.next
             index += 1
 
-
-# --- 2. Uji Coba Stack ---
-history = InvestigationStack()
-history.push_history("192.168.1.1 (Gateway)")
-history.push_history("192.168.10.5 (Server Web)")
-history.push_history("192.168.10.10 (Database)")
-
-# Simulasi klik tombol 'Back'
-history.pop_history()
-
-
-# --- 3. Uji Coba Queue ---
-incident_center = IncidentQueue()
-incident_center.enqueue_incident("10.0.0.4 (PC Finansial)")
-incident_center.enqueue_incident("10.0.0.9 (PC Direksi)")
-incident_center.display_queue()
-
-# Penanganan pertama
-incident_center.dequeue_incident()
-incident_center.display_queue()
+    def is_empty(self):
+        return self.front is None
 
