@@ -2,15 +2,34 @@
     {
         "ip_address": "192.168.1.10",
         "mac_address": "00:1A:2B:3C:4D:5E",
-        "location": ["Gedung Rektorat", "Lantai 2", "Rak 01"],
+        "location": [
+            "Gedung Rektorat",
+            "Lantai 2",
+            "Rak 01"
+        ],
         "is_server": false,
         "server_type": null
     },
     {
         "ip_address": "192.168.1.50",
         "mac_address": "00:80:C7:A1:B2:C3",
-        "location": ["Gedung UPT TIK", "Lantai 3", "Server Room"],
+        "location": [
+            "Gedung UPT TIK",
+            "Lantai 3",
+            "Server Room"
+        ],
         "is_server": true,
         "server_type": "Database Utama"
+    },
+    {
+        "ip_address": "192.123.7.7",
+        "mac_address": "2C:54:91:88:C9:E3",
+        "location": [
+            "Gedung Rektorat",
+            "3",
+            "17"
+        ],
+        "is_server": true,
+        "server_type": "Database"
     }
 ]

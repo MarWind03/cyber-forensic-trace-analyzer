@@ -258,7 +258,6 @@ class CyberTraceApp:
                         print(f" Informasi Dasar : {asset.display_info()}")
                         
                         # Memeriksa secara dinamis apakah objek ini merupakan Child Class (Server)
-                        from src.models import Server
                         if isinstance(asset, Server):
                             print(f" [!] Peringatan  : Perangkat ini merupakan INFRASTRUKTUR KRITIS!")
                             print(f" Tipe Layanan    : {asset.server_type} Server")
